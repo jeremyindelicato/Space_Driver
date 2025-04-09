@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Driver</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Orbitron', sans-serif;
+        }
+        @font-face {
+            font-family: 'Orbitron';
+            src: url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        }
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            color: white;
+            pointer-events: none;
+            z-index: 100;
+            text-shadow: 0 0 0px #00ffff;
+        }
+        #stats-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        #score-container, #health-container, #speed-container {
+            background: var(--gradient-bleu, radial-gradient(149.02% 149.02% at 28.32% -16.21%, #3F8391 0%, #13434D 100%));
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 1px solid #00ffff;
+            box-shadow: 0 0 0px rgba(0, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        .stat-title {
+            font-size: 1rem;
+            color: #ffffff;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        #health-bar {
+            width: 200px;
+            height: 10px;
+            background: rgba(255, 0, 0, 0.2);
+            border-radius: 5px;
+            margin-top: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #health-progress {
+            height: 100%;
+            width: 100%;
+            background: var(--Institut-Corail, linear-gradient(268deg, #B7123C 32.8%, #791931 98.83%));
+            transition: width 0.3s;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+        }
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 3rem;
+            text-align: center;
+            display: none;
+            background: var(--Institut-Corail, linear-gradient(268deg, #B7123C 32.8%, #791931 98.83%));
+            padding: 40px;
+            border-radius: 15px;
+            z-index: 200;
+        }
+        #restart-btn, #back-btn {
+            margin-top: 30px;
+            padding: 12px 30px;
+            background: var(--gradient-bleu, radial-gradient(149.02% 149.02% at 28.32% -16.21%, #3F8391 0%, #13434D 100%));
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+        #restart-btn:hover, #back-btn:hover {
+            background: var(--Institut-Corail, linear-gradient(268deg, #B7123C 32.8%, #791931 98.83%));
+            transform: translateY(-2px);
+            box-shadow: 0 0 5px rgba(0, 170, 255, 1);
+        }
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 10%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            background: var(--Institut-Corail, linear-gradient(268deg, #B7123C 32.8%, #791931 98.83%));
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #00ffff;
+            box-shadow: 0 0 0px rgba(0, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        .control-item {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            color: #ffffff;
+        }
+        canvas { 
+            display: block; 
+        }
+        #hud {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 5px;
+            background: rgba(0, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        #speed-indicator {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00aaff, #0066ff);
+            border-radius: 3px;
+            transition: width 0.2s;
+            box-shadow: 0 0 10px rgba(0, 170, 255, 0.7);
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            pointer-events: none;
+            z-index: 100;
+        }
+        #crosshair::before, #crosshair::after {
+            content: '';
+            position: absolute;
+            background: rgba(0, 255, 255, 0.8);
+            box-shadow: 0 0 5px #00ffff;
+        }
+        #crosshair::before {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        #crosshair::after {
+            width: 2px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .damage-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.2);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 90;
+        }
+        #back-btn {
+            margin-right: 15px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+        }
+        #music-control {
+            position: absolute;
+            top: 850px;
+            right: 20px;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 300;
+            background: var(--gradient-bleu, radial-gradient(149.02% 149.02% at 28.32% -16.21%, #3F8391 0%, #13434D 100%));
+            padding: 15px;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div id="stats-container">
+            <div id="score-container">
+                <div class="stat-title">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div id="health-container">
+                <div class="stat-title">Bouclier</div>
+                <div class="stat-value" id="health-value">100%</div>
+                <div id="health-bar">
+                    <div id="health-progress"></div>
+                </div>
+            </div>
+            <div id="speed-container">
+                <div class="stat-title">Vitesse</div>
+                <div class="stat-value" id="speed-value">0 km/s</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="hud">
+        <div id="speed-indicator"></div>
+    </div>
+    
+    <div id="crosshair"></div>
+    
+    <div id="game-over">
+        <h1>GAME OVER</h1>
+        <p>Score final: <span id="final-score">0</span></p>
+        <div class="button-container">
+            <button id="back-btn"><i class="fas fa-arrow-left"></i> Retour</button>
+            <button id="restart-btn"><i class="fas fa-redo"></i> Recommencer</button>
+        </div>
+    </div>
+    
+    <div id="controls">
+        <div class="control-item"><i class="fas fa-arrow-up"></i> <i class="fas fa-arrow-down"></i> Avancer/Reculer</div>
+        <div class="control-item"><i class="fas fa-arrow-left"></i> <i class="fas fa-arrow-right"></i> Tourner</div>
+        <div class="control-item"><i class="fas fa-w"></i> <i class="fas fa-a"></i> <i class="fas fa-s"></i> <i class="fas fa-d"></i> Mouvement latéral</div>
+    </div>
+    
+    <div class="damage-effect" id="damage-effect"></div>
+
+    <div id="music-control">
+        <i class="fas fa-volume-up"></i>
+    </div>
+
+    <!-- Audio elements -->
+    <audio id="background-music" loop>
+        <source src="assets/music.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="damage-sound">
+        <source src="assets/damage.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // Configuration du jeu
+        const config = {
+            shipSpeed: 0.5,
+            rotationSpeed: 0.05,
+            lateralSpeed: 0.3,
+            asteroidSpawnRate: 800,
+            asteroidSpeed: 0.15,
+            starCount: 3000,
+            nebulaCount: 20,
+            bloom: {
+                strength: 2.0,
+                radius: 0.6,
+                threshold: 0.8
+            },
+            shipHealth: 100,
+            collisionDamage: 15,
+            scorePerSecond: 2,
+            asteroidPoints: 15,
+            maxSpeed: 100,
+            speedIncrement: 1
+        };
+
+        // Variables du jeu
+        let score = 0;
+        let health = config.shipHealth;
+        let currentSpeed = 0;
+        let gameOver = false;
+        let lastAsteroidSpawn = 0;
+        let scoreInterval;
+        let scene, camera, renderer, ship, composer, bloomPass;
+        let asteroids = [];
+        let stars = [];
+        let engineParticles = [];
+        let keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false,
+            w: false,
+            a: false,
+            s: false,
+            d: false
+        };
+
+        // Audio elements
+        const bgMusic = document.getElementById('background-music');
+        const damageSound = document.getElementById('damage-sound');
+        let isMusicPlaying = false;
+
+        // Initialisation
+        init();
+
+        function init() {
+            // Création de la scène
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000011);
+            scene.fog = new THREE.FogExp2(0x000022, 0.0005);
+
+            // Création de la caméra
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera.position.set(0, 3, 10);
+            camera.lookAt(0, 0, 0);
+
+            // Création du rendu
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ReinhardToneMapping;
+            renderer.toneMappingExposure = 2.0;
+            document.body.appendChild(renderer.domElement);
+
+            // Effets post-processing
+            const renderScene = new THREE.RenderPass(scene, camera);
+            bloomPass = new THREE.UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                config.bloom.strength,
+                config.bloom.radius,
+                config.bloom.threshold
+            );
+
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
+
+            // Lumière
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            directionalLight.position.set(1, 1, 1);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            const hemisphereLight = new THREE.HemisphereLight(0x00aaff, 0xffaa00, 0.7);
+            scene.add(hemisphereLight);
+
+            // Création du vaisseau
+            createAdvancedShip();
+
+            // Création des étoiles et nébuleuses
+            createStars();
+            createNebulas();
+
+            // Gestion des événements
+            window.addEventListener('resize', onWindowResize);
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.getElementById('restart-btn').addEventListener('click', restartGame);
+            document.getElementById('back-btn').addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+            document.getElementById('music-control').addEventListener('click', toggleMusic);
+
+            // Démarrer le jeu
+            scoreInterval = setInterval(updateScore, 1000);
+            
+            // Essayer de démarrer la musique (nécessite une interaction utilisateur)
+            document.addEventListener('click', initAudio, { once: true });
+            
+            animate();
+        }
+
+        function initAudio() {
+            // Cette fonction est appelée après une interaction utilisateur
+            bgMusic.volume = 0.3;
+            damageSound.volume = 0.5;
+            
+            // Activer la musique si l'utilisateur a cliqué
+            toggleMusic();
+        }
+
+        function toggleMusic() {
+            const musicControl = document.getElementById('music-control');
+            if (isMusicPlaying) {
+                bgMusic.pause();
+                musicControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            } else {
+                bgMusic.play().catch(e => console.log("Erreur de lecture audio:", e));
+                musicControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+
+        function createAdvancedShip() {
+            // Groupe principal pour le vaisseau
+            ship = new THREE.Group();
+            scene.add(ship);
+
+            // Corps principal du vaisseau
+            const cockpitGeometry = new THREE.CylinderGeometry(0.8, 1.2, 2, 8, 1, true);
+            const cockpitMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x1a3a5a,
+                emissive: 0x0a1a2a,
+                specular: 0x111111,
+                shininess: 50,
+                flatShading: false,
+                transparent: true,
+                opacity: 0.9
+            });
+            const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
+            cockpit.rotation.x = Math.PI / 2;
+            cockpit.position.z = 0.5;
+            cockpit.castShadow = true;
+            cockpit.receiveShadow = true;
+            ship.add(cockpit);
+
+            // Ailes
+            const wingGeometry = new THREE.BoxGeometry(3, 0.2, 1);
+            const wingMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x2a4a6a,
+                emissive: 0x0a1a2a,
+                specular: 0x222222,
+                shininess: 30
+            });
+            
+            const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            leftWing.position.set(-1.8, 0, 0);
+            leftWing.castShadow = true;
+            leftWing.receiveShadow = true;
+            ship.add(leftWing);
+            
+            const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+            rightWing.position.set(1.8, 0, 0);
+            rightWing.castShadow = true;
+            rightWing.receiveShadow = true;
+            ship.add(rightWing);
+
+            // Moteurs
+            const engineGeometry = new THREE.CylinderGeometry(0.5, 0.3, 1.5, 32);
+            const engineMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x4a4a4a,
+                emissive: 0x222222,
+                specular: 0x555555,
+                shininess: 20
+            });
+            
+            const leftEngine = new THREE.Mesh(engineGeometry, engineMaterial);
+            leftEngine.position.set(-1, -0.3, -1.2);
+            leftEngine.rotation.x = Math.PI / 2;
+            leftEngine.castShadow = true;
+            leftEngine.receiveShadow = true;
+            ship.add(leftEngine);
+            
+            const rightEngine = new THREE.Mesh(engineGeometry, engineMaterial);
+            rightEngine.position.set(1, -0.3, -1.2);
+            rightEngine.rotation.x = Math.PI / 2;
+            rightEngine.castShadow = true;
+            rightEngine.receiveShadow = true;
+            ship.add(rightEngine);
+
+            // Détails du cockpit
+            const windowGeometry = new THREE.CylinderGeometry(0.5, 0.7, 0.1, 32);
+            const windowMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x00aaff,
+                emissive: 0x0066aa,
+                specular: 0x00ffff,
+                shininess: 100,
+                transparent: true,
+                opacity: 0.8
+            });
+            const cockpitWindow = new THREE.Mesh(windowGeometry, windowMaterial);
+            cockpitWindow.rotation.x = Math.PI / 2;
+            cockpitWindow.position.z = 1.4;
+            ship.add(cockpitWindow);
+
+            // Canons laser
+            const cannonGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1.5, 16);
+            const cannonMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x555555,
+                emissive: 0x222222,
+                specular: 0x888888
+            });
+            
+            const leftCannon = new THREE.Mesh(cannonGeometry, cannonMaterial);
+            leftCannon.position.set(-1.5, 0.3, 0);
+            leftCannon.rotation.x = Math.PI / 2;
+            ship.add(leftCannon);
+            
+            const rightCannon = new THREE.Mesh(cannonGeometry, cannonMaterial);
+            rightCannon.position.set(1.5, 0.3, 0);
+            rightCannon.rotation.x = Math.PI / 2;
+            ship.add(rightCannon);
+
+            // Particules des moteurs
+            createAdvancedEngineParticles();
+        }
+
+        function createAdvancedEngineParticles() {
+            // Système de particules pour les moteurs
+            const particleCount = 500;
+            const particles = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+            const sizes = new Float32Array(particleCount);
+
+            for (let i = 0; i < particleCount; i++) {
+                // Positions aléatoires derrière les moteurs
+                const engine = i % 2 === 0 ? -1 : 1;
+                positions[i * 3] = engine + (Math.random() - 0.5) * 0.3;
+                positions[i * 3 + 1] = -0.3 + (Math.random() - 0.5) * 0.2;
+                positions[i * 3 + 2] = -1.5 - Math.random() * 5;
+
+                // Couleurs orange/jaune pour les flammes
+                colors[i * 3] = 1;
+                colors[i * 3 + 1] = 0.3 + Math.random() * 0.7;
+                colors[i * 3 + 2] = 0;
+
+                sizes[i] = 0.2 + Math.random() * 0.8;
+            }
+
+            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const particleMaterial = new THREE.PointsMaterial({
+                size: 0.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: true
+            });
+
+            const particleSystem = new THREE.Points(particles, particleMaterial);
+            particleSystem.position.set(0, 0, 0);
+            ship.add(particleSystem);
+            engineParticles.push(particleSystem);
+        }
+
+        function createStars() {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(config.starCount * 3);
+            const colors = new Float32Array(config.starCount * 3);
+            const sizes = new Float32Array(config.starCount);
+
+            for (let i = 0; i < config.starCount; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * 3000;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 3000;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 3000;
+
+                // Couleurs variées pour les étoiles
+                const starColor = Math.random();
+                if (starColor < 0.7) {
+                    colors[i * 3] = 0.9 + Math.random() * 0.1; // Blanc
+                    colors[i * 3 + 1] = 0.9 + Math.random() * 0.1;
+                    colors[i * 3 + 2] = 0.9 + Math.random() * 0.1;
+                } else if (starColor < 0.85) {
+                    colors[i * 3] = 0.8 + Math.random() * 0.2; // Bleu
+                    colors[i * 3 + 1] = 0.8 + Math.random() * 0.2;
+                    colors[i * 3 + 2] = 1.0;
+                } else {
+                    colors[i * 3] = 1.0; // Rouge/Orange
+                    colors[i * 3 + 1] = 0.4 + Math.random() * 0.3;
+                    colors[i * 3 + 2] = 0.2 + Math.random() * 0.3;
+                }
+
+                sizes[i] = 0.1 + Math.random() * 2.0;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+            const material = new THREE.PointsMaterial({
+                size: 1.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                sizeAttenuation: true,
+                blending: THREE.AdditiveBlending
+            });
+
+            const starField = new THREE.Points(geometry, material);
+            scene.add(starField);
+        }
+
+        function createNebulas() {
+            for (let i = 0; i < config.nebulaCount; i++) {
+                const geometry = new THREE.SphereGeometry(50 + Math.random() * 150, 32, 32);
+                const material = new THREE.MeshPhongMaterial({
+                    color: new THREE.Color(
+                        Math.random() * 0.2 + 0.1,
+                        Math.random() * 0.2 + 0.1,
+                        Math.random() * 0.3 + 0.2
+                    ),
+                    transparent: true,
+                    opacity: 0.05 + Math.random() * 0.1,
+                    emissive: new THREE.Color(
+                        Math.random() * 0.1,
+                        Math.random() * 0.1,
+                        Math.random() * 0.2 + 0.1
+                    ),
+                    flatShading: true
+                });
+
+                const nebula = new THREE.Mesh(geometry, material);
+                nebula.position.set(
+                    (Math.random() - 0.5) * 2000,
+                    (Math.random() - 0.5) * 2000,
+                    (Math.random() - 0.5) * 2000
+                );
+                scene.add(nebula);
+            }
+        }
+
+        function createAsteroid() {
+            const size = 1 + Math.random() * 4;
+            const geometry = new THREE.IcosahedronGeometry(size, 2);
+            
+            // Créer une forme irrégulière
+            const positionAttribute = geometry.getAttribute('position');
+            const vertex = new THREE.Vector3();
+            
+            for (let i = 0; i < positionAttribute.count; i++) {
+                vertex.fromBufferAttribute(positionAttribute, i);
+                vertex.x += (Math.random() - 0.5) * size * 0.4;
+                vertex.y += (Math.random() - 0.5) * size * 0.4;
+                vertex.z += (Math.random() - 0.5) * size * 0.4;
+                positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            }
+            
+            // Texture aléatoire pour l'astéroïde
+            const textureType = Math.random();
+            let color, emissive;
+            
+            if (textureType < 0.3) {
+                // Astéroïde métallique
+                color = 0x777777;
+                emissive = 0x222222;
+            } else if (textureType < 0.6) {
+                // Astéroïde rocheux
+                color = 0x5a3a1a;
+                emissive = 0x2a1a0a;
+            } else {
+                // Astéroïde glacé
+                color = 0x9ab4c8;
+                emissive = 0x4a6a8a;
+            }
+            
+            const material = new THREE.MeshPhongMaterial({
+                color: color,
+                emissive: emissive,
+                flatShading: true,
+                shininess: 5
+            });
+            
+            const asteroid = new THREE.Mesh(geometry, material);
+            asteroid.castShadow = true;
+            asteroid.receiveShadow = true;
+            
+            // Position aléatoire devant le vaisseau
+            asteroid.position.set(
+                (Math.random() - 0.5) * 60,
+                (Math.random() - 0.5) * 30,
+                ship.position.z - 150 - Math.random() * 100
+            );
+            
+            // Rotation aléatoire
+            asteroid.rotation.set(
+                Math.random() * Math.PI,
+                Math.random() * Math.PI,
+                Math.random() * Math.PI
+            );
+            
+            // Vitesse de rotation aléatoire
+            asteroid.userData = {
+                rotationSpeed: {
+                    x: (Math.random() - 0.5) * 0.03,
+                    y: (Math.random() - 0.5) * 0.03,
+                    z: (Math.random() - 0.5) * 0.03
+                },
+                speed: config.asteroidSpeed + Math.random() * 0.1,
+                size: size
+            };
+            
+            scene.add(asteroid);
+            asteroids.push(asteroid);
+            
+            return asteroid;
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onKeyDown(event) {
+            if (keys.hasOwnProperty(event.key)) {
+                keys[event.key] = true;
+            }
+        }
+
+        function onKeyUp(event) {
+            if (keys.hasOwnProperty(event.key)) {
+                keys[event.key] = false;
+            }
+        }
+
+        function updateShip(delta) {
+            // Gestion de la vitesse
+            if (keys.ArrowUp || keys.w) {
+                currentSpeed = Math.min(config.maxSpeed, currentSpeed + config.speedIncrement);
+            } else if (keys.ArrowDown || keys.s) {
+                currentSpeed = Math.max(0, currentSpeed - config.speedIncrement * 2);
+            } else {
+                // Ralentissement progressif
+                currentSpeed = Math.max(0, currentSpeed - config.speedIncrement * 0.5);
+            }
+            
+            // Mise à jour de l'indicateur de vitesse
+            updateSpeedDisplay();
+            
+            // Mouvement avant/arrière basé sur la vitesse
+            const speedFactor = currentSpeed / config.maxSpeed;
+            ship.position.z -= config.shipSpeed * delta * 60 * speedFactor;
+            
+            // Rotation gauche/droite
+            if (keys.ArrowLeft || keys.a) {
+                ship.rotation.y += config.rotationSpeed * delta * 60;
+            }
+            if (keys.ArrowRight || keys.d) {
+                ship.rotation.y -= config.rotationSpeed * delta * 60;
+            }
+            
+            // Mouvement latéral
+            let lateralMovement = 0;
+            if (keys.a) {
+                lateralMovement -= config.lateralSpeed * delta * 60;
+            }
+            if (keys.d) {
+                lateralMovement += config.lateralSpeed * delta * 60;
+            }
+            
+            ship.position.x += lateralMovement;
+            
+            // Mouvement vertical
+            let verticalMovement = 0;
+            if (keys.w) {
+                verticalMovement += config.lateralSpeed * delta * 60;
+            }
+            if (keys.s) {
+                verticalMovement -= config.lateralSpeed * delta * 60;
+            }
+            
+            ship.position.y += verticalMovement;
+            
+            // Limites de l'espace de jeu
+            const boundary = 100;
+            ship.position.x = Math.max(-boundary, Math.min(boundary, ship.position.x));
+            ship.position.y = Math.max(-boundary, Math.min(boundary, ship.position.y));
+            
+            // Mise à jour de la caméra pour suivre le vaisseau avec un effet de retard
+            const targetCameraPos = new THREE.Vector3(
+                ship.position.x,
+                ship.position.y + 3,
+                ship.position.z + 10
+            );
+            
+            camera.position.lerp(targetCameraPos, 0.1);
+            camera.lookAt(ship.position.x, ship.position.y, ship.position.z - 5);
+            
+            // Animation des particules des moteurs
+            updateEngineParticles(speedFactor);
+        }
+
+        function updateEngineParticles(speedFactor) {
+            for (const particleSystem of engineParticles) {
+                const positions = particleSystem.geometry.attributes.position.array;
+                
+                for (let i = 0; i < positions.length; i += 3) {
+                    // Déplacer les particules vers l'arrière
+                    positions[i + 2] -= 0.1 * speedFactor;
+                    
+                    // Si la particule est trop loin, la réinitialiser
+                    if (positions[i + 2] < -6) {
+                        const engine = i % 2 === 0 ? -1 : 1;
+                        positions[i] = engine + (Math.random() - 0.5) * 0.3;
+                        positions[i + 1] = -0.3 + (Math.random() - 0.5) * 0.2;
+                        positions[i + 2] = -1.5 - Math.random() * 0.5;
+                    }
+                }
+                
+                particleSystem.geometry.attributes.position.needsUpdate = true;
+                
+                // Ajuster la taille des particules en fonction de la vitesse
+                particleSystem.material.size = 0.3 + speedFactor * 0.7;
+            }
+        }
+
+        function updateAsteroids(delta) {
+            // Création de nouveaux astéroïdes
+            const now = Date.now();
+            if (now - lastAsteroidSpawn > config.asteroidSpawnRate && !gameOver) {
+                createAsteroid();
+                lastAsteroidSpawn = now;
+                
+                // Augmenter la difficulté
+                config.asteroidSpawnRate = Math.max(200, config.asteroidSpawnRate - 5);
+                config.asteroidSpeed = Math.min(0.4, config.asteroidSpeed + 0.002);
+            }
+            
+            // Mise à jour des astéroïdes existants
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const asteroid = asteroids[i];
+                
+                // Rotation
+                asteroid.rotation.x += asteroid.userData.rotationSpeed.x * delta * 60;
+                asteroid.rotation.y += asteroid.userData.rotationSpeed.y * delta * 60;
+                asteroid.rotation.z += asteroid.userData.rotationSpeed.z * delta * 60;
+                
+                // Mouvement vers le vaisseau
+                asteroid.position.z += asteroid.userData.speed * delta * 60;
+                
+                // Vérifier les collisions
+                if (checkCollision(ship, asteroid)) {
+                    health -= config.collisionDamage * asteroid.userData.size;
+                    updateHealthBar();
+                    showDamageEffect();
+                    
+                    // Jouer le son de dégâts
+                    damageSound.currentTime = 0;
+                    damageSound.play().catch(e => console.log("Erreur de lecture audio:", e));
+                    
+                    // Supprimer l'astéroïde après collision
+                    scene.remove(asteroid);
+                    asteroids.splice(i, 1);
+                    
+                    // Vérifier si le jeu est terminé
+                    if (health <= 0) {
+                        endGame();
+                    }
+                    
+                    continue;
+                }
+                
+                // Supprimer les astéroïdes derrière le vaisseau
+                if (asteroid.position.z > ship.position.z + 20) {
+                    scene.remove(asteroid);
+                    asteroids.splice(i, 1);
+                    
+                    // Ajouter des points pour avoir évité l'astéroïde
+                    if (!gameOver) {
+                        score += config.asteroidPoints;
+                        updateScoreDisplay();
+                    }
+                }
+            }
+        }
+
+        function showDamageEffect() {
+            const effect = document.getElementById('damage-effect');
+            effect.style.opacity = 0.7;
+            
+            setTimeout(() => {
+                effect.style.opacity = 0;
+            }, 300);
+        }
+
+        function checkCollision(obj1, obj2) {
+            const distance = obj1.position.distanceTo(obj2.position);
+            const radius1 = 1.5; // Approximation pour le vaisseau
+            const radius2 = obj2.userData.size;
+            
+            return distance < (radius1 + radius2);
+        }
+
+        function updateScore() {
+            if (!gameOver) {
+                score += config.scorePerSecond;
+                updateScoreDisplay();
+            }
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score').textContent = score;
+        }
+
+        function updateHealthBar() {
+            const percent = Math.max(0, health) / config.shipHealth * 100;
+            document.getElementById('health-progress').style.width = `${percent}%`;
+            document.getElementById('health-value').textContent = `${Math.round(percent)}%`;
+            
+            // Changer la couleur en fonction de la santé
+            if (percent < 30) {
+                document.getElementById('health-progress').style.background = 'linear-gradient(90deg, #ff0000, #ff3300)';
+            } else if (percent < 60) {
+                document.getElementById('health-progress').style.background = 'linear-gradient(90deg, #ff3300, #ff9900)';
+            } else {
+                document.getElementById('health-progress').style.background = 'linear-gradient(90deg, #ff0000, #ff9900)';
+            }
+        }
+
+        function updateSpeedDisplay() {
+            const percent = currentSpeed / config.maxSpeed * 100;
+            document.getElementById('speed-indicator').style.width = `${percent}%`;
+            document.getElementById('speed-value').textContent = `${Math.round(currentSpeed * 10)} km/s`;
+            
+            // Changer la couleur en fonction de la vitesse
+            if (percent > 80) {
+                document.getElementById('speed-indicator').style.background = 'linear-gradient(90deg, #0066ff, #ff00ff)';
+            } else if (percent > 50) {
+                document.getElementById('speed-indicator').style.background = 'linear-gradient(90deg, #0066ff, #00aaff)';
+            } else {
+                document.getElementById('speed-indicator').style.background = 'linear-gradient(90deg, #00aaff, #0066ff)';
+            }
+        }
+
+        function endGame() {
+            gameOver = true;
+            clearInterval(scoreInterval);
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over').style.display = 'block';
+            
+            // Arrêter le vaisseau
+            currentSpeed = 0;
+            updateSpeedDisplay();
+            
+            // Mettre en pause la musique
+            bgMusic.pause();
+        }
+
+        function restartGame() {
+            // Réinitialiser les variables
+            score = 0;
+            health = config.shipHealth;
+            currentSpeed = 0;
+            gameOver = false;
+            lastAsteroidSpawn = 0;
+            
+            // Réinitialiser la configuration
+            config.asteroidSpawnRate = 800;
+            config.asteroidSpeed = 0.15;
+            
+            // Supprimer tous les astéroïdes
+            for (const asteroid of asteroids) {
+                scene.remove(asteroid);
+            }
+            asteroids = [];
+            
+            // Réinitialiser le vaisseau
+            ship.position.set(0, 0, 0);
+            ship.rotation.set(0, 0, 0);
+            
+            // Mettre à jour l'UI
+            updateScoreDisplay();
+            updateHealthBar();
+            updateSpeedDisplay();
+            document.getElementById('game-over').style.display = 'none';
+            
+            // Redémarrer le compteur de score
+            scoreInterval = setInterval(updateScore, 1000);
+            
+            // Redémarrer la musique si elle était en cours
+            if (isMusicPlaying) {
+                bgMusic.currentTime = 0;
+                bgMusic.play().catch(e => console.log("Erreur de lecture audio:", e));
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = 0.016; // Approximation pour 60 FPS
+            
+            if (!gameOver) {
+                updateShip(delta);
+                updateAsteroids(delta);
+            }
+            
+            composer.render();
+        }
+    </script>
+</body>
+</html>

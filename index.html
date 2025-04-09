@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Readex+Pro:wght,HEXP@160..700,6.2&display=swap" rel="stylesheet">
+<link rel="icon" type="image/gif" href="assets/image 161.png">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Driver 🚀</title>
+    <style>
+        /* Ajout de styles pour la vidéo d'arrière-plan */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Place la vidéo derrière tous les autres éléments */
+            object-fit: cover; /* Assure que la vidéo couvre tout l'espace */
+        }
+        
+        /* S'assurer que le contenu a un fond transparent */
+        body {
+            background-color: transparent;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            position: relative; /* S'assure que les éléments restent au-dessus de la vidéo */
+        }
+    </style>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Vidéo d'arrière-plan -->
+    <video autoplay muted loop class="video-background">
+        <source src="assets/background.mp4" type="video/mp4">
+    </video>
+    
+    <div class="container">
+        <img src="assets/SpaceDriver.png" alt="Space Driver" class="title-image">
+        <div class="button-container">
+            <button onclick="window.location.href='game.html'">JOUER</button>
+            <button onclick="window.location.href='credits.html'">CREDITS</button>
+        </div>
+        <div class="character">
+            <img src="assets/spaceship.png" alt="Character">
+        </div>
+    <footer>
+        <img src="assets/tutorial_image.png" alt="Tutorial" class="tutorial-image">
+    </footer>
+</body>
+</html>

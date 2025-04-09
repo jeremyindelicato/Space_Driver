@@ -1,0 +1,250 @@
+/* Animations existantes */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes glitch {
+    0% { transform: translate(0); }
+    20% { transform: translate(-5px, 5px); }
+    40% { transform: translate(-5px, -5px); }
+    60% { transform: translate(5px, 5px); }
+    80% { transform: translate(5px, -5px); }
+    100% { transform: translate(0); }
+}
+
+@keyframes starTwinkle {
+    0% { opacity: 0.3; }
+    50% { opacity: 1; }
+    100% { opacity: 0.3; }
+}
+
+@keyframes rotateIn {
+    from { transform: rotate(180deg) scale(0); opacity: 0; }
+    to { transform: rotate(0) scale(1); opacity: 1; }
+}
+
+/* Ajout des animations aux éléments existants */
+body {
+    font-family: 'Press Start 2P', system-ui;
+    font-weight: 400;
+    font-style: normal;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    animation: fadeIn 2s ease-in-out;
+}
+
+.video-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    object-fit: cover;
+}
+
+/* Création d'étoiles avec animation */
+.video-background::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(white, rgba(255, 255, 255, 0) 2px);
+    background-size: 50px 50px;
+    animation: starTwinkle 3s infinite alternate;
+}
+
+body {
+    background-color: transparent;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+.container {
+    position: relative;
+    text-align: center;
+    margin-top: 200px;
+    animation: fadeIn 1.5s ease-in-out;
+}
+
+.title-image {
+    width: 600px;
+    margin-bottom: 50px;
+    animation: glitch 5s infinite, pulse 3s infinite;
+}
+
+.button-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 80px;
+    margin-top: 80px;
+    animation: fadeIn 2s ease-in-out 0.5s both;
+}
+
+button {
+    font-size: 1.5em;
+    font-family: 'Press Start 2P', system-ui;
+    font-weight: 400;
+    font-style: normal;
+    padding: 15px 40px;
+    margin: 15px;
+    background: var(--gradient-bleu, radial-gradient(149.02% 149.02% at 28.32% -16.21%, #3F8391 0%, #13434D 100%));
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    width: 350px;
+    position: relative;
+    overflow: hidden;
+}
+
+button:nth-child(1) {
+    animation: slideInRight 1s ease-out 0.7s both;
+}
+
+button:nth-child(2) {
+    animation: slideInRight 1s ease-out 0.9s both;
+}
+
+button:hover {
+    background: var(--Institut-Corail, linear-gradient(268deg, #B7123C 32.8%, #791931 98.83%));
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Effet de brillance lors du survol */
+button::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(45deg);
+    transition: all 0.5s;
+    opacity: 0;
+}
+
+button:hover::before {
+    animation: shine 1s forwards;
+}
+
+@keyframes shine {
+    0% {
+        left: -50%;
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        left: 150%;
+        opacity: 0;
+    }
+}
+
+.tutorial-image {
+    width: 500px;
+    height: auto;
+    margin-top: 30px;
+    animation: fadeIn 2s ease-in-out 1.2s both;
+}
+
+.character img {
+    width: 350px;
+    position: absolute;
+    top: 70px;
+    right: -400px;
+    animation: float 6s infinite ease-in-out, slideInRight 1.5s ease-out forwards;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0,0.4);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    position: relative;
+    animation: rotateIn 0.5s ease-out;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+    transform: rotate(90deg);
+}
+
+/* Animation pour les flèches directionnelles */
+@keyframes arrowPulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.7; }
+}
+
+/* Animation pour le mot "Boost" */
+@keyframes textGlow {
+    0% { text-shadow: 0 0 5px rgba(63, 131, 145, 0.5); }
+    50% { text-shadow: 0 0 20px rgba(63, 131, 145, 1); }
+    100% { text-shadow: 0 0 5px rgba(63, 131, 145, 0.5); }
+}
+
+/* Sélecteurs ciblant les éléments du tutoriel */
+.tutorial-image img[alt*="arrow"],
+.tutorial-image img[alt*="direction"] {
+    animation: arrowPulse 2s infinite ease-in-out;
+}
+
+.tutorial-image + div {
+    animation: textGlow 3s infinite ease-in-out;
+}
